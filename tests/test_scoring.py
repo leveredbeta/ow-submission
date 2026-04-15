@@ -21,7 +21,7 @@ from openwrench_supplier_scoring.scoring import (
 
 def build_test_frame() -> pd.DataFrame:
     rows = [
-        ("WO-1", "SUP-A", "HVAC", "Dallas", 1.0, 8.0, 400.0, 1, 5.0, 0, 1),
+        ("WO-1", "SUP-A", "HVAC", "Dallas", 1.0, 8.0, 400.0, 1, 5.0, 0, 100),
         ("WO-2", "SUP-B", "HVAC", "Dallas", 5.0, 24.0, 620.0, 1, 4.4, 0, 20),
         ("WO-3", "SUP-B", "HVAC", "Dallas", 4.0, 26.0, 630.0, 1, 4.5, 0, 20),
         ("WO-4", "SUP-B", "HVAC", "Dallas", 5.0, 25.0, 640.0, 1, 4.4, 0, 20),
@@ -116,6 +116,15 @@ class SupplierScoringTests(unittest.TestCase):
         self.assertLessEqual(supplier["bootstrap_rank_p10"], supplier["bootstrap_rank_p90"])
         self.assertGreaterEqual(supplier["confidence_score"], 0.0)
         self.assertLessEqual(supplier["confidence_score"], 1.0)
+
+    def test_historical_volume_does_not_override_low_observed_support(self) -> None:
+        scored = build_scored_supplier_frame(self.jobs, config=self.config, use_shrinkage=True)
+        bootstrap_scores = bootstrap_supplier_scores(self.jobs, config=self.config)
+        scored = attach_uncertainty(scored, bootstrap_scores, config=self.config)
+        supplier = scored.loc[scored["supplier_id"] == "SUP-A"].iloc[0]
+        self.assertEqual(int(supplier["historical_job_count_for_supplier"]), 100)
+        self.assertEqual(int(supplier["jobs_observed"]), 1)
+        self.assertEqual(supplier["confidence_label"], "Low")
 
 
 if __name__ == "__main__":

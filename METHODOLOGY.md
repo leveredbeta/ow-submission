@@ -56,6 +56,14 @@ After combining the components, the composite score is also shrunk back toward a
 
 This extra step is deliberate. It prevents low-volume suppliers from surfacing too high even when a few component metrics still look strong after metric-level shrinkage.
 
+### Why `job_count_for_supplier` is not used as direct support
+
+The dataset includes a supplier-level historical count, `job_count_for_supplier`. I use that field conservatively.
+
+It is **not** treated as extra pseudo-observations in the performance score, because the unseen historical jobs do not include the outcome metrics required for this ranking task. We do not know their response times, costs, reopen behavior, or ratings. Using that count directly in shrinkage would overstate the amount of observed evidence.
+
+Instead, the field contributes only a weak experience signal in the confidence label. That lets the system acknowledge supplier history without pretending those unseen jobs are labeled outcome data.
+
 ## 4. Standardization and Composite Score
 
 For each supplier, shrunk component values are compared against the chosen comparison group. The system computes:
@@ -86,10 +94,23 @@ The final confidence label combines:
 - observed job count
 - observed rating count
 - comparison-group support
+- discounted historical experience from `job_count_for_supplier`
 - bootstrap rank stability
 - bootstrap score stability
 
 Suppliers with one or two jobs are explicitly capped at `Low` confidence. Suppliers with three or four jobs can be at most `Medium`.
+
+### Conservative routing view
+
+In addition to the point score, the output includes a conservative score based on the bootstrap 10th percentile. This is useful when the business wants to avoid over-routing work to suppliers whose point estimate is strong but uncertain.
+
+The market recommendation output uses that conservative score together with confidence gating:
+- `Preferred` for high-confidence suppliers with a positive conservative score
+- `Consider` for medium-confidence suppliers with a positive conservative score
+- `Review` when the score is positive but evidence is weak
+- `Fallback` otherwise
+
+This keeps operational recommendations from overstating weak evidence in thin markets.
 
 ## 6. Explanations
 
@@ -117,6 +138,9 @@ Tests confirm that tiny local peer groups fall back to category-level comparison
 
 4. Stability checks
 Bootstrap intervals and confidence labels are written to the output so the ranking is never presented as exact.
+
+5. Sensitivity analysis
+The repository includes a sensitivity analysis over peer-group thresholds, shrinkage strength, and alternative component weightings. This shows whether the top of the leaderboard is robust to reasonable modeling choices rather than being an artifact of one configuration.
 
 The repository also includes a naive comparison run without shrinkage so it is easy to see where the robust methodology materially changes the ranking.
 

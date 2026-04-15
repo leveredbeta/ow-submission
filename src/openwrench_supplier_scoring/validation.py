@@ -97,6 +97,21 @@ def build_validation_summary(
         .head(10)
         .round(3)
         .to_dict(orient="records"),
+        "top_suppliers_conservative": scored[
+            [
+                "rank_conservative",
+                "supplier_id",
+                "category",
+                "region",
+                "score_conservative",
+                "confidence_label",
+                "jobs_observed",
+            ]
+        ]
+        .sort_values(["rank_conservative", "supplier_id"])
+        .head(10)
+        .round(3)
+        .to_dict(orient="records"),
         "bootstrap_score_std_examples": bootstrap_summary.sort_values(
             "score_std",
             ascending=False,
@@ -159,6 +174,15 @@ def build_validation_report_markdown(summary: dict[str, Any]) -> str:
         lines.append(
             "- #{rank_overall} {supplier_id} ({category}, {region}) score {score_overall} "
             "[{confidence_label}] across {jobs_observed} jobs".format(**supplier)
+        )
+
+    lines.extend(["", "## Conservative Top Suppliers"])
+    for supplier in summary["top_suppliers_conservative"]:
+        lines.append(
+            "- #{rank_conservative} {supplier_id} ({category}, {region}) conservative score "
+            "{score_conservative} [{confidence_label}] across {jobs_observed} jobs".format(
+                **supplier
+            )
         )
 
     return "\n".join(lines) + "\n"

@@ -18,6 +18,10 @@ from openwrench_supplier_scoring.scoring import (
     build_scored_supplier_frame,
     bootstrap_supplier_scores,
 )
+from openwrench_supplier_scoring.sensitivity import (
+    build_sensitivity_analysis,
+    build_sensitivity_report_markdown,
+)
 from openwrench_supplier_scoring.validation import (
     build_validation_report_markdown,
     build_validation_summary,
@@ -90,6 +94,8 @@ def main() -> None:
     market_path = args.output_dir / "market_recommendations.csv"
     validation_json_path = args.output_dir / "validation_summary.json"
     validation_md_path = args.output_dir / "validation_report.md"
+    sensitivity_csv_path = args.output_dir / "sensitivity_analysis.csv"
+    sensitivity_md_path = args.output_dir / "sensitivity_report.md"
 
     write_csv(scored, rankings_path)
     write_csv(build_market_recommendations(scored), market_path)
@@ -106,11 +112,20 @@ def main() -> None:
         validation_md_path,
     )
 
+    sensitivity_summary, _ = build_sensitivity_analysis(jobs, base_config=config)
+    write_csv(sensitivity_summary, sensitivity_csv_path)
+    write_text(
+        build_sensitivity_report_markdown(sensitivity_summary),
+        sensitivity_md_path,
+    )
+
     print("Wrote:")
     print(f"  {rankings_path}")
     print(f"  {market_path}")
     print(f"  {validation_json_path}")
     print(f"  {validation_md_path}")
+    print(f"  {sensitivity_csv_path}")
+    print(f"  {sensitivity_md_path}")
     print()
     print("Top 10 suppliers:")
     display_columns = [

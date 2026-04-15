@@ -384,6 +384,10 @@ def attach_uncertainty(
     comparison_factor = (
         suppliers["comparison_group_suppliers"] / config.confidence_group_supplier_target
     ).clip(0.0, 1.0)
+    history_factor = (
+        np.log1p(suppliers["historical_job_count_for_supplier"])
+        / np.log1p(config.confidence_history_target)
+    ).clip(0.0, 1.0)
     rank_stability_factor = (
         1.0 - (suppliers["bootstrap_rank_interval_width"] / supplier_count)
     ).clip(0.0, 1.0)
@@ -392,9 +396,10 @@ def attach_uncertainty(
     ).clip(0.0, 1.0)
 
     suppliers["confidence_score"] = (
-        0.40 * jobs_factor
+        0.30 * jobs_factor
         + 0.10 * ratings_factor
         + 0.10 * comparison_factor
+        + 0.10 * history_factor
         + 0.20 * rank_stability_factor
         + 0.20 * score_stability_factor
     )
@@ -419,6 +424,12 @@ def attach_uncertainty(
         "confidence_label",
     ] = "Medium"
 
+    suppliers["score_conservative"] = suppliers["bootstrap_score_p10"]
+    suppliers["rank_conservative"] = suppliers["score_conservative"].rank(
+        method="min",
+        ascending=False,
+    ).astype(int)
+
     suppliers = add_explanations(suppliers, config=config)
     suppliers["rank_range"] = suppliers.apply(
         lambda row: f"{max(1, floor(row['bootstrap_rank_p10']))}-{ceil(row['bootstrap_rank_p90'])}",
@@ -434,10 +445,45 @@ def build_market_recommendations(
     suppliers: pd.DataFrame,
     top_k: int = 3,
 ) -> pd.DataFrame:
+    suppliers = suppliers.copy()
+    suppliers["confidence_priority"] = suppliers["confidence_label"].map(
+        {"High": 2, "Medium": 1, "Low": 0}
+    ).fillna(0)
+    suppliers["routing_recommendation"] = np.select(
+        [
+            (suppliers["confidence_label"] == "High")
+            & (suppliers["score_conservative"] >= 50.0),
+            (suppliers["confidence_label"] == "Medium")
+            & (suppliers["score_conservative"] >= 50.0),
+            suppliers["score_conservative"] >= 50.0,
+        ],
+        [
+            "Preferred",
+            "Consider",
+            "Review",
+        ],
+        default="Fallback",
+    )
+    suppliers["routing_priority"] = suppliers["routing_recommendation"].map(
+        {"Preferred": 3, "Consider": 2, "Review": 1, "Fallback": 0}
+    ).fillna(0)
+
+    ranking_columns = ["score_overall", "jobs_observed"]
+    ascending = [False, False]
+    if "score_conservative" in suppliers.columns:
+        ranking_columns = [
+            "routing_priority",
+            "confidence_priority",
+            "score_conservative",
+            "score_overall",
+            "jobs_observed",
+        ]
+        ascending = [False, False, False, False, False]
+
     recommendations = (
         suppliers.sort_values(
-            ["category", "region", "score_overall", "jobs_observed"],
-            ascending=[True, True, False, False],
+            ["category", "region", *ranking_columns],
+            ascending=[True, True, *ascending],
         )
         .groupby(["category", "region"], as_index=False, group_keys=False)
         .head(top_k)
@@ -452,9 +498,12 @@ def build_market_recommendations(
         "market_rank",
         "supplier_id",
         "score_overall",
+        "score_conservative",
         "confidence_label",
+        "routing_recommendation",
         "jobs_observed",
         "rank_range",
         "short_explanation",
     ]
-    return recommendations.loc[:, ordered_columns]
+    available_columns = [column for column in ordered_columns if column in recommendations.columns]
+    return recommendations.loc[:, available_columns]

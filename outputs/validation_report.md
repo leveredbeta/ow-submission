@@ -13,9 +13,9 @@
 - category_region: 32
 
 ## Confidence Labels
-- Low: 25
+- High: 27
 - Medium: 23
-- High: 22
+- Low: 20
 
 ## Stability
 - Top-10 overlap with naive ranking: 6
@@ -43,3 +43,15 @@
 - #8 SUP-026 (Plumbing, Denver) score 54.935 [High] across 22 jobs
 - #9 SUP-062 (Doors, Orlando) score 54.53 [Medium] across 5 jobs
 - #10 SUP-001 (HVAC, Dallas) score 54.308 [Medium] across 5 jobs
+
+## Conservative Top Suppliers
+- #1 SUP-023 (Plumbing, Houston) conservative score 56.946 [High] across 14 jobs
+- #2 SUP-014 (HVAC, Dallas) conservative score 53.046 [High] across 12 jobs
+- #3 SUP-062 (Doors, Orlando) conservative score 52.363 [Medium] across 5 jobs
+- #4 SUP-056 (General, Dallas) conservative score 52.257 [High] across 7 jobs
+- #5 SUP-030 (Electrical, Phoenix) conservative score 52.135 [High] across 11 jobs
+- #6 SUP-068 (Pool, Phoenix) conservative score 51.914 [Medium] across 4 jobs
+- #7 SUP-003 (HVAC, Orlando) conservative score 51.442 [Low] across 1 jobs
+- #8 SUP-029 (Electrical, Phoenix) conservative score 51.195 [Medium] across 4 jobs
+- #9 SUP-058 (Doors, Nashville) conservative score 50.871 [Low] across 1 jobs
+- #10 SUP-047 (General, Atlanta) conservative score 50.758 [Medium] across 7 jobs

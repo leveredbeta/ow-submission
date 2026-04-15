@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 
 
 @dataclass(frozen=True)
@@ -31,14 +31,21 @@ class ScoringConfig:
     score_center: float = 50.0
     score_scale: float = 10.0
     final_score_prior_strength: float = 6.0
+    metric_weight_overrides: dict[str, float] | None = None
     confidence_jobs_target: int = 12
     confidence_rating_target: int = 5
     confidence_group_supplier_target: int = 6
+    confidence_history_target: int = 50
     confidence_low_job_cap: int = 2
     confidence_medium_job_cap: int = 4
     metrics: tuple[MetricSpec, ...] = field(init=False)
 
     def __post_init__(self) -> None:
+        def weight(metric_name: str, default: float) -> float:
+            if not self.metric_weight_overrides:
+                return default
+            return float(self.metric_weight_overrides.get(metric_name, default))
+
         object.__setattr__(
             self,
             "metrics",
@@ -48,7 +55,7 @@ class ScoringConfig:
                     raw_column="response_time_hours_raw",
                     support_column="jobs_observed",
                     kind="continuous",
-                    weight=0.20,
+                    weight=weight("response_time_hours", 0.20),
                     direction=-1,
                     prior_strength=self.continuous_prior_strength,
                     count_column=None,
@@ -60,7 +67,7 @@ class ScoringConfig:
                     raw_column="completion_time_hours_raw",
                     support_column="jobs_observed",
                     kind="continuous",
-                    weight=0.20,
+                    weight=weight("completion_time_hours", 0.20),
                     direction=-1,
                     prior_strength=self.continuous_prior_strength,
                     count_column=None,
@@ -72,7 +79,7 @@ class ScoringConfig:
                     raw_column="cost_usd_raw",
                     support_column="jobs_observed",
                     kind="continuous",
-                    weight=0.15,
+                    weight=weight("cost_usd", 0.15),
                     direction=-1,
                     prior_strength=self.continuous_prior_strength,
                     count_column=None,
@@ -84,7 +91,7 @@ class ScoringConfig:
                     raw_column="nte_compliance_raw",
                     support_column="jobs_observed",
                     kind="binary",
-                    weight=0.15,
+                    weight=weight("nte_compliance", 0.15),
                     direction=1,
                     prior_strength=self.binary_prior_strength,
                     count_column="nte_successes",
@@ -96,7 +103,7 @@ class ScoringConfig:
                     raw_column="customer_rating_raw",
                     support_column="ratings_observed",
                     kind="continuous",
-                    weight=0.10,
+                    weight=weight("customer_rating", 0.10),
                     direction=1,
                     prior_strength=self.rating_prior_strength,
                     count_column=None,
@@ -108,7 +115,7 @@ class ScoringConfig:
                     raw_column="reopened_raw",
                     support_column="jobs_observed",
                     kind="binary",
-                    weight=0.20,
+                    weight=weight("reopened", 0.20),
                     direction=-1,
                     prior_strength=self.binary_prior_strength,
                     count_column="reopened_events",
@@ -117,3 +124,10 @@ class ScoringConfig:
                 ),
             ),
         )
+
+    def to_init_kwargs(self) -> dict[str, object]:
+        return {
+            field_info.name: getattr(self, field_info.name)
+            for field_info in fields(self)
+            if field_info.init
+        }

@@ -10,9 +10,9 @@
     "category_region": 32
   },
   "confidence_labels": {
-    "Low": 25,
+    "High": 27,
     "Medium": 23,
-    "High": 22
+    "Low": 20
   },
   "top_10_overlap_with_naive": 6,
   "median_bootstrap_rank_interval_width": 18.05,
@@ -197,6 +197,98 @@
       "score_overall": 54.308,
       "confidence_label": "Medium",
       "jobs_observed": 5
+    }
+  ],
+  "top_suppliers_conservative": [
+    {
+      "rank_conservative": 1,
+      "supplier_id": "SUP-023",
+      "category": "Plumbing",
+      "region": "Houston",
+      "score_conservative": 56.946,
+      "confidence_label": "High",
+      "jobs_observed": 14
+    },
+    {
+      "rank_conservative": 2,
+      "supplier_id": "SUP-014",
+      "category": "HVAC",
+      "region": "Dallas",
+      "score_conservative": 53.046,
+      "confidence_label": "High",
+      "jobs_observed": 12
+    },
+    {
+      "rank_conservative": 3,
+      "supplier_id": "SUP-062",
+      "category": "Doors",
+      "region": "Orlando",
+      "score_conservative": 52.363,
+      "confidence_label": "Medium",
+      "jobs_observed": 5
+    },
+    {
+      "rank_conservative": 4,
+      "supplier_id": "SUP-056",
+      "category": "General",
+      "region": "Dallas",
+      "score_conservative": 52.257,
+      "confidence_label": "High",
+      "jobs_observed": 7
+    },
+    {
+      "rank_conservative": 5,
+      "supplier_id": "SUP-030",
+      "category": "Electrical",
+      "region": "Phoenix",
+      "score_conservative": 52.135,
+      "confidence_label": "High",
+      "jobs_observed": 11
+    },
+    {
+      "rank_conservative": 6,
+      "supplier_id": "SUP-068",
+      "category": "Pool",
+      "region": "Phoenix",
+      "score_conservative": 51.914,
+      "confidence_label": "Medium",
+      "jobs_observed": 4
+    },
+    {
+      "rank_conservative": 7,
+      "supplier_id": "SUP-003",
+      "category": "HVAC",
+      "region": "Orlando",
+      "score_conservative": 51.442,
+      "confidence_label": "Low",
+      "jobs_observed": 1
+    },
+    {
+      "rank_conservative": 8,
+      "supplier_id": "SUP-029",
+      "category": "Electrical",
+      "region": "Phoenix",
+      "score_conservative": 51.195,
+      "confidence_label": "Medium",
+      "jobs_observed": 4
+    },
+    {
+      "rank_conservative": 9,
+      "supplier_id": "SUP-058",
+      "category": "Doors",
+      "region": "Nashville",
+      "score_conservative": 50.871,
+      "confidence_label": "Low",
+      "jobs_observed": 1
+    },
+    {
+      "rank_conservative": 10,
+      "supplier_id": "SUP-047",
+      "category": "General",
+      "region": "Atlanta",
+      "score_conservative": 50.758,
+      "confidence_label": "Medium",
+      "jobs_observed": 7
     }
   ],
   "bootstrap_score_std_examples": [

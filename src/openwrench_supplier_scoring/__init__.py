@@ -6,6 +6,7 @@ from .scoring import (
     build_market_recommendations,
     build_scored_supplier_frame,
 )
+from .sensitivity import build_sensitivity_analysis
 
 __all__ = [
     "ScoringConfig",
@@ -13,5 +14,6 @@ __all__ = [
     "bootstrap_supplier_scores",
     "build_market_recommendations",
     "build_scored_supplier_frame",
+    "build_sensitivity_analysis",
     "load_supplier_jobs",
 ]

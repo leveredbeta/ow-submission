@@ -1,0 +1,8 @@
+scenario,top_10_overlap_vs_baseline,top_5_overlap_vs_baseline,spearman_rank_corr_vs_baseline,mean_abs_rank_shift,max_abs_rank_shift,baseline_top_10_moved_out,baseline_top_10_moved_in
+baseline,10,5,1.0,0.0,0,,
+heavier_shrinkage,10,3,0.9949,1.171,10,,
+lighter_shrinkage,10,5,0.9986,0.657,4,,
+more_conservative_local_comparison,7,4,0.8927,5.114,37,"SUP-001, SUP-017, SUP-026","SUP-041, SUP-052, SUP-061"
+more_local_comparison,9,4,0.8595,5.429,39,SUP-030,SUP-039
+quality_emphasis,8,3,0.9367,4.743,23,"SUP-014, SUP-056","SUP-029, SUP-061"
+speed_emphasis,8,4,0.9834,2.486,12,"SUP-001, SUP-026","SUP-029, SUP-057"

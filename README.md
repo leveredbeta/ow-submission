@@ -43,7 +43,7 @@ The pipeline scores each supplier on six components:
 
 The implementation uses `category + region` as the preferred peer group when there is enough local support. When a market is too thin, it falls back to `category` so the ranking is still stable and explainable.
 
-Each component is shrunk toward a blended peer baseline before scoring. That prevents suppliers with one or two jobs from dominating the leaderboard on noise alone. After that, the weighted composite score is itself pulled back toward a neutral score of `50` when observed history is thin. Confidence labels come from bootstrap rank stability plus support size.
+Each component is shrunk toward a blended peer baseline before scoring. That prevents suppliers with one or two jobs from dominating the leaderboard on noise alone. After that, the weighted composite score is itself pulled back toward a neutral score of `50` when observed history is thin. Confidence labels come from bootstrap rank stability, support size, and a discounted historical experience signal from `job_count_for_supplier`.
 
 Full methodology details are in [METHODOLOGY.md](./METHODOLOGY.md).
 
@@ -95,7 +95,7 @@ The tests cover:
 - overall score, confidence, rank range, component scores, and short explanation
 
 `outputs/market_recommendations.csv`
-- top supplier recommendations by market (`category`, `region`)
+- top supplier recommendations by market (`category`, `region`) using conservative score and confidence-aware routing posture
 
 `outputs/validation_summary.json`
 - machine-readable validation summary
@@ -103,8 +103,17 @@ The tests cover:
 `outputs/validation_report.md`
 - human-readable validation notes
 
+`outputs/sensitivity_analysis.csv`
+- ranking robustness under reasonable parameter and weighting changes
+
+`outputs/sensitivity_report.md`
+- human-readable sensitivity summary
+
 ## Notes
 
 - `score_overall` is the final ranking score. It is intentionally conservative for thin-history suppliers.
+- `score_conservative` is the bootstrap lower-bound score intended for more cautious routing decisions.
 - `confidence_label` is separate from the score and reflects support plus bootstrap stability.
+- `job_count_for_supplier` is used only as a weak confidence signal, not as pseudo-observations in the score.
+- `routing_recommendation` in the market output prevents low-confidence suppliers from being presented like clean first-choice routes.
 - `short_explanation` is generated from the strongest positive and negative component contributions.
