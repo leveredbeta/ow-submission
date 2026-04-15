@@ -1,0 +1,254 @@
+{
+  "input_rows": 500,
+  "supplier_count": 70,
+  "missing_customer_rating_rows": 97,
+  "suppliers_without_ratings": 2,
+  "low_support_suppliers_jobs_le_3": 24,
+  "low_support_suppliers_jobs_le_5": 41,
+  "comparison_levels": {
+    "category": 38,
+    "category_region": 32
+  },
+  "confidence_labels": {
+    "Low": 25,
+    "Medium": 23,
+    "High": 22
+  },
+  "top_10_overlap_with_naive": 6,
+  "median_bootstrap_rank_interval_width": 18.05,
+  "median_bootstrap_score_interval_width": 4.319,
+  "largest_shrinkage_examples": [
+    {
+      "supplier_id": "SUP-055",
+      "category": "General",
+      "region": "Dallas",
+      "jobs_observed": 1,
+      "score_overall": 46.921,
+      "score_overall_naive": 38.567,
+      "score_change_vs_naive": 8.354,
+      "rank_overall": 58,
+      "rank_overall_naive": 70
+    },
+    {
+      "supplier_id": "SUP-003",
+      "category": "HVAC",
+      "region": "Orlando",
+      "jobs_observed": 1,
+      "score_overall": 52.281,
+      "score_overall_naive": 59.655,
+      "score_change_vs_naive": -7.374,
+      "rank_overall": 18,
+      "rank_overall_naive": 2
+    },
+    {
+      "supplier_id": "SUP-033",
+      "category": "Electrical",
+      "region": "Dallas",
+      "jobs_observed": 1,
+      "score_overall": 50.517,
+      "score_overall_naive": 57.476,
+      "score_change_vs_naive": -6.959,
+      "rank_overall": 31,
+      "rank_overall_naive": 4
+    },
+    {
+      "supplier_id": "SUP-064",
+      "category": "Doors",
+      "region": "Orlando",
+      "jobs_observed": 2,
+      "score_overall": 48.155,
+      "score_overall_naive": 43.789,
+      "score_change_vs_naive": 4.367,
+      "rank_overall": 52,
+      "rank_overall_naive": 60
+    },
+    {
+      "supplier_id": "SUP-008",
+      "category": "HVAC",
+      "region": "Dallas",
+      "jobs_observed": 1,
+      "score_overall": 50.36,
+      "score_overall_naive": 54.476,
+      "score_change_vs_naive": -4.116,
+      "rank_overall": 35,
+      "rank_overall_naive": 15
+    },
+    {
+      "supplier_id": "SUP-068",
+      "category": "Pool",
+      "region": "Phoenix",
+      "jobs_observed": 4,
+      "score_overall": 55.605,
+      "score_overall_naive": 59.513,
+      "score_change_vs_naive": -3.909,
+      "rank_overall": 4,
+      "rank_overall_naive": 3
+    },
+    {
+      "supplier_id": "SUP-004",
+      "category": "HVAC",
+      "region": "Dallas",
+      "jobs_observed": 5,
+      "score_overall": 45.98,
+      "score_overall_naive": 42.152,
+      "score_change_vs_naive": 3.828,
+      "rank_overall": 60,
+      "rank_overall_naive": 67
+    },
+    {
+      "supplier_id": "SUP-016",
+      "category": "Plumbing",
+      "region": "Charlotte",
+      "jobs_observed": 2,
+      "score_overall": 46.529,
+      "score_overall_naive": 42.716,
+      "score_change_vs_naive": 3.813,
+      "rank_overall": 59,
+      "rank_overall_naive": 64
+    }
+  ],
+  "top_suppliers": [
+    {
+      "rank_overall": 1,
+      "supplier_id": "SUP-023",
+      "category": "Plumbing",
+      "region": "Houston",
+      "score_overall": 60.116,
+      "confidence_label": "High",
+      "jobs_observed": 14
+    },
+    {
+      "rank_overall": 2,
+      "supplier_id": "SUP-030",
+      "category": "Electrical",
+      "region": "Phoenix",
+      "score_overall": 56.848,
+      "confidence_label": "High",
+      "jobs_observed": 11
+    },
+    {
+      "rank_overall": 3,
+      "supplier_id": "SUP-014",
+      "category": "HVAC",
+      "region": "Dallas",
+      "score_overall": 56.494,
+      "confidence_label": "High",
+      "jobs_observed": 12
+    },
+    {
+      "rank_overall": 4,
+      "supplier_id": "SUP-068",
+      "category": "Pool",
+      "region": "Phoenix",
+      "score_overall": 55.605,
+      "confidence_label": "Medium",
+      "jobs_observed": 4
+    },
+    {
+      "rank_overall": 5,
+      "supplier_id": "SUP-056",
+      "category": "General",
+      "region": "Dallas",
+      "score_overall": 55.214,
+      "confidence_label": "High",
+      "jobs_observed": 7
+    },
+    {
+      "rank_overall": 6,
+      "supplier_id": "SUP-017",
+      "category": "Plumbing",
+      "region": "Charlotte",
+      "score_overall": 55.2,
+      "confidence_label": "High",
+      "jobs_observed": 13
+    },
+    {
+      "rank_overall": 7,
+      "supplier_id": "SUP-047",
+      "category": "General",
+      "region": "Atlanta",
+      "score_overall": 55.007,
+      "confidence_label": "Medium",
+      "jobs_observed": 7
+    },
+    {
+      "rank_overall": 8,
+      "supplier_id": "SUP-026",
+      "category": "Plumbing",
+      "region": "Denver",
+      "score_overall": 54.935,
+      "confidence_label": "High",
+      "jobs_observed": 22
+    },
+    {
+      "rank_overall": 9,
+      "supplier_id": "SUP-062",
+      "category": "Doors",
+      "region": "Orlando",
+      "score_overall": 54.53,
+      "confidence_label": "Medium",
+      "jobs_observed": 5
+    },
+    {
+      "rank_overall": 10,
+      "supplier_id": "SUP-001",
+      "category": "HVAC",
+      "region": "Dallas",
+      "score_overall": 54.308,
+      "confidence_label": "Medium",
+      "jobs_observed": 5
+    }
+  ],
+  "bootstrap_score_std_examples": [
+    {
+      "supplier_id": "SUP-067",
+      "score_std": 3.294,
+      "median_rank": 16.5
+    },
+    {
+      "supplier_id": "SUP-037",
+      "score_std": 3.27,
+      "median_rank": 53.0
+    },
+    {
+      "supplier_id": "SUP-047",
+      "score_std": 3.198,
+      "median_rank": 5.0
+    },
+    {
+      "supplier_id": "SUP-042",
+      "score_std": 2.946,
+      "median_rank": 29.0
+    },
+    {
+      "supplier_id": "SUP-069",
+      "score_std": 2.896,
+      "median_rank": 29.0
+    },
+    {
+      "supplier_id": "SUP-026",
+      "score_std": 2.826,
+      "median_rank": 20.5
+    },
+    {
+      "supplier_id": "SUP-010",
+      "score_std": 2.744,
+      "median_rank": 67.0
+    },
+    {
+      "supplier_id": "SUP-032",
+      "score_std": 2.734,
+      "median_rank": 62.0
+    },
+    {
+      "supplier_id": "SUP-035",
+      "score_std": 2.73,
+      "median_rank": 44.0
+    },
+    {
+      "supplier_id": "SUP-073",
+      "score_std": 2.695,
+      "median_rank": 16.0
+    }
+  ]
+}
