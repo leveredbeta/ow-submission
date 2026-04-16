@@ -1,30 +1,40 @@
 # Methodology
 
-## Objective
+## Framing
 
-The goal is to rank suppliers in a way that is fair enough to trust, simple enough to explain, and stable enough to use in operational routing decisions.
+I treated this assignment as a supplier-selection problem under limited evidence.
 
-The main risk in this dataset is not model complexity. It is false precision. Many suppliers have very few observed jobs, some peer groups are thin, and customer ratings are missing for a meaningful share of the data. A naive weighted average would over-rank tiny samples and overstate certainty.
+The dataset is large enough to build a reasonable score, but not large enough to justify a naive leaderboard. Many suppliers only appear a handful of times in the sample, some markets are thin, and customer ratings are missing often enough that a simple weighted average would give a false sense of certainty.
 
-## 1. Fair Comparison Groups
+So my objective was not to find the most complicated model. It was to build a ranking that I would actually be comfortable putting in front of an ops team.
 
-The preferred peer group is `category + region`, because that is the fairest apples-to-apples comparison for supplier selection.
+That led me to four design decisions:
+- compare suppliers against the right peers
+- shrink sparse observations toward a defensible baseline
+- keep performance and confidence separate
+- show uncertainty instead of pretending the ranking is exact
 
-That local comparison is only used when the market has enough support:
+## 1. Peer Groups
+
+My preferred comparison unit is `category + region`.
+
+That is the fairest apples-to-apples view for supplier choice. An HVAC supplier in Dallas should be compared with other Dallas HVAC suppliers before being compared with the entire dataset.
+
+I only use the local market as the comparison group when there is enough support:
 - at least 4 suppliers
 - at least 25 jobs
 
-If the local market is thinner than that, the scoring system falls back to `category`-level comparisons. This avoids unstable rankings driven by one or two suppliers in a tiny region.
+If a market is thinner than that, I fall back to `category`.
 
-For shrinkage baselines, the method still uses local information through a blend:
+I still keep some local information in the shrinkage baseline. For each metric, I blend the local market mean with the category mean:
 
-`baseline = w * (category-region mean) + (1 - w) * (category mean)`
+`baseline = w * local_mean + (1 - w) * category_mean`
 
-where `w` grows with local market support. This preserves regional signal without overreacting to tiny peer groups.
+where `w` increases with local market support. This lets me preserve regional signal without letting tiny peer groups dominate the result.
 
-## 2. Component Metrics
+## 2. Score Components
 
-Each supplier is scored on six interpretable components:
+I used six components because they cover the operational trade-offs in the prompt without making the score hard to explain.
 
 | Component | Direction | Weight |
 | --- | --- | --- |
@@ -35,60 +45,73 @@ Each supplier is scored on six interpretable components:
 | Customer rating | Higher is better | 10% |
 | Reopen rate | Lower is better | 20% |
 
-These weights are intentionally simple. Reopen rate and speed carry the most influence because a supplier that is cheap or highly rated but repeatedly fails jobs should not rank as top-tier.
+I weighted reopen rate and speed most heavily because a supplier who is cheap but slow, or fast but frequently reopened, is not truly strong in an operations setting.
 
-## 3. Sparse-Data Adjustment
+I kept the weights intentionally simple. I would rather have a transparent weighting scheme I can defend than a more complicated optimization that looks precise but is harder to trust.
+
+## 3. Sparse Data Handling
+
+This is the most important part of the solution.
 
 ### Metric-level shrinkage
 
-Each metric is pulled toward its blended baseline before ranking:
-- continuous metrics use a weighted mean between the supplier estimate and the baseline
-- binary metrics use a beta-binomial style update against the baseline rate
-- customer rating uses the number of observed ratings rather than total jobs
+For each supplier and each metric, I shrink the observed value toward the blended baseline.
 
-This means a supplier with 1 excellent job does not rank as confidently as a supplier with 20 strong jobs.
+- Continuous metrics use a weighted average of the observed value and the baseline.
+- Binary metrics use a beta-binomial style update against the baseline rate.
+- Customer rating uses the number of observed ratings, not the total number of sampled jobs.
+
+This prevents a supplier with one unusually good sampled job from ranking like a proven top performer.
 
 ### Final-score shrinkage
 
-After combining the components, the composite score is also shrunk back toward a neutral score of `50` based on observed job count:
+After computing the weighted composite performance score, I shrink the final score back toward `50` when observed support is thin:
 
 `score_overall = 50 + evidence_weight * (score_performance - 50)`
 
-This extra step is deliberate. It prevents low-volume suppliers from surfacing too high even when a few component metrics still look strong after metric-level shrinkage.
+I added this second layer deliberately. In early iterations, metric-level shrinkage alone still allowed some very low-volume suppliers to surface too high. Pulling the final score toward neutral made the leaderboard line up better with the caution I wanted the write-up to express.
 
-### Why `job_count_for_supplier` is not used as direct support
+## 4. Why I Did Not Use `job_count_for_supplier` As Direct Support
 
-The dataset includes a supplier-level historical count, `job_count_for_supplier`. I use that field conservatively.
+The dataset includes `job_count_for_supplier`, which is clearly informative, but I chose to use it conservatively.
 
-It is **not** treated as extra pseudo-observations in the performance score, because the unseen historical jobs do not include the outcome metrics required for this ranking task. We do not know their response times, costs, reopen behavior, or ratings. Using that count directly in shrinkage would overstate the amount of observed evidence.
+I did **not** treat it as extra pseudo-observations in the performance score.
 
-Instead, the field contributes only a weak experience signal in the confidence label. That lets the system acknowledge supplier history without pretending those unseen jobs are labeled outcome data.
+The reason is simple: I do not have the outcome metrics for those unseen historical jobs. I know the count, but I do not know the response times, completion times, costs, reopen behavior, or customer ratings for the missing history. If I used that field as if it were labeled support, I would be overstating the amount of evidence I actually have.
 
-## 4. Standardization and Composite Score
+Instead, I use `job_count_for_supplier` only as a weak experience signal in the confidence label. That lets the system acknowledge that a supplier with broader historical exposure may be less fragile than a completely new supplier, without pretending I observed more outcome data than I really did.
 
-For each supplier, shrunk component values are compared against the chosen comparison group. The system computes:
-- a standardized contribution for the weighted composite score
-- a percentile-style component score for human-readable output
+## 5. Standardization And Composite Score
 
-The weighted standardized contributions are summed into a latent performance score, then mapped to a `0-100` style scale centered at `50`.
+Once the shrunk metric values are computed, I compare each supplier against its selected comparison group.
+
+For every component I produce:
+- a standardized contribution used in the weighted composite score
+- a percentile-style component score that is easier to read in the final output
+
+I sum the weighted standardized contributions into a latent performance score and map it onto a `0-100` style scale centered at `50`.
 
 Interpretation:
-- around `50` means near-peer performance
-- meaningfully above `50` means above-peer performance
-- meaningfully below `50` means below-peer performance
+- around `50` means roughly peer-level performance
+- above `50` means above-peer performance
+- below `50` means below-peer performance
 
-## 5. Confidence and Uncertainty
+I do not interpret this as a causal measure of supplier quality. It is a comparative operational score based on the observed sample.
 
-Point estimates alone are not enough for supplier ranking, so the submission adds uncertainty in two ways.
+## 6. Confidence And Uncertainty
 
-### Stratified bootstrap
+I wanted the output to make a clear distinction between “this supplier looks strong” and “I am confident that signal is real.”
 
-The pipeline resamples jobs within each supplier multiple times and recomputes the full ranking. This produces:
+### Bootstrap uncertainty
+
+I bootstrap sampled jobs within each supplier and recompute the ranking repeatedly. That gives me:
 - score intervals
 - rank intervals
-- top-10 inclusion frequency
+- top-10 inclusion behavior
 
-### Confidence labels
+This is important because the sample is sparse enough that point estimates alone are not trustworthy.
+
+### Confidence label
 
 The final confidence label combines:
 - observed job count
@@ -98,66 +121,95 @@ The final confidence label combines:
 - bootstrap rank stability
 - bootstrap score stability
 
-Suppliers with one or two jobs are explicitly capped at `Low` confidence. Suppliers with three or four jobs can be at most `Medium`.
+I also impose explicit caps:
+- suppliers with one or two observed jobs cannot score above `Low` confidence
+- suppliers with three or four observed jobs cannot score above `Medium`
+
+I added those caps because I wanted the system behavior to match the narrative. If evidence is genuinely thin, the label should say so clearly.
 
 ### Conservative routing view
 
-In addition to the point score, the output includes a conservative score based on the bootstrap 10th percentile. This is useful when the business wants to avoid over-routing work to suppliers whose point estimate is strong but uncertain.
+Alongside the point score, I output a conservative score based on the bootstrap 10th percentile.
 
-The market recommendation output uses that conservative score together with confidence gating:
+This is the number I would reach for when decisions need to be more risk-aware. A supplier can have a solid point score and still deserve caution if the lower bound is weak.
+
+For the market recommendation output, I combine the conservative score with confidence:
 - `Preferred` for high-confidence suppliers with a positive conservative score
 - `Consider` for medium-confidence suppliers with a positive conservative score
-- `Review` when the score is positive but evidence is weak
+- `Review` for suppliers whose score is positive but evidence is weak
 - `Fallback` otherwise
 
-This keeps operational recommendations from overstating weak evidence in thin markets.
+That gives the final output more operational meaning than a flat ranked list.
 
-## 6. Explanations
+## 7. Explanations
 
-Each supplier gets a short explanation generated from the strongest positive and negative component contributions.
+I generate a short explanation for each supplier from the strongest positive and negative component contributions.
 
-Example structure:
-- strongest strengths relative to peers
-- main weakness if material
-- caveat when rating data is missing or evidence is limited
+The structure is simple:
+- what this supplier does well relative to peers
+- what held the score back, if anything
+- whether the evidence is limited or rating coverage is missing
 
-This keeps the output useful for non-technical stakeholders.
+I wanted the explanations to be short enough for an ops user to skim, but grounded enough that the ranking does not feel opaque.
 
-## 7. Validation
+## 8. Validation
 
-The implementation validates the scoring system in four ways:
+I validated the solution in five ways.
 
-1. Structural checks
-The pipeline verifies required columns, types, and supplier uniqueness by market.
+### Structural checks
 
-2. Sparse-data checks
-Tests confirm that low-volume suppliers are pulled toward baseline rather than dominating the ranking.
+The pipeline checks required columns, expected types, and supplier uniqueness by market.
 
-3. Fallback checks
-Tests confirm that tiny local peer groups fall back to category-level comparisons.
+### Behavioral tests
 
-4. Stability checks
-Bootstrap intervals and confidence labels are written to the output so the ranking is never presented as exact.
+The test suite covers:
+- expected output columns
+- sparse-data shrinkage
+- missing customer ratings
+- fallback from tiny local markets to category comparisons
+- uncertainty attachment
+- the rule that historical supplier volume should not overpower weak observed support
 
-5. Sensitivity analysis
-The repository includes a sensitivity analysis over peer-group thresholds, shrinkage strength, and alternative component weightings. This shows whether the top of the leaderboard is robust to reasonable modeling choices rather than being an artifact of one configuration.
+### Naive comparison
 
-The repository also includes a naive comparison run without shrinkage so it is easy to see where the robust methodology materially changes the ranking.
+I also generate a naive comparison without shrinkage. This makes it easy to show where the more careful methodology materially changes the leaderboard.
 
-## 8. Limitations
+### Bootstrap stability
 
-This sample does not include job complexity, asset age, customer priority, or seasonality. Because of that:
-- cost may partly reflect harder jobs rather than worse supplier performance
-- completion time may be affected by part availability
-- reopen rate can be noisy for low-volume suppliers even after shrinkage
+The output includes score intervals, rank intervals, and confidence labels so the ranking is never presented as exact.
 
-The current score is therefore best interpreted as a fair operational ranking from limited observed outcomes, not as a causal estimate of supplier quality.
+### Sensitivity analysis
 
-## 9. Production-Ready Improvements
+Finally, I compare the baseline ranking against several reasonable methodology variants:
+- lighter shrinkage
+- heavier shrinkage
+- more local comparison thresholds
+- more conservative local comparison thresholds
+- quality-heavy weighting
+- speed-heavy weighting
 
-With more time or data, I would add:
-- job complexity controls
-- time-decay weighting so recent performance matters more
-- separate emergency vs. routine supplier scorecards
-- richer calibration of uncertainty thresholds with business feedback
-- backtesting on future jobs to see whether top-ranked suppliers actually outperform
+This matters because I do not want the final leaderboard to depend entirely on one arbitrary parameter setting.
+
+## 9. Limitations
+
+There are several things this sample does not capture:
+- job complexity
+- asset age
+- urgency mix
+- seasonality
+- part availability
+
+Because of that:
+- a higher cost can reflect harder work, not worse performance
+- longer completion time can reflect supply constraints, not poor execution
+- reopen rate can still be noisy even after shrinkage
+
+So I would treat this score as a fair operational ranking from limited observed outcomes, not as a complete model of supplier quality.
+
+## 10. What I Would Do Next
+
+With more time or richer data, I would extend this in four directions:
+- add job-complexity controls
+- add recency weighting so newer performance matters more
+- separate routine and emergency supplier scorecards
+- backtest whether higher-ranked suppliers actually outperform on future jobs
