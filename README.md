@@ -1,28 +1,33 @@
 # OpenWrench Supplier Scoring Assessment
 
-I approached this take-home as a decision-system design problem, not just a ranking exercise.
+This submission implements a fair, explainable supplier ranking system for the OpenWrench data science assessment.
 
-The main issue in this dataset is false precision. There are only 500 sampled jobs, many suppliers have very thin coverage in the sample, customer ratings are missing for a meaningful share of rows, and some markets are too small for clean local comparisons. A naive weighted average would produce a leaderboard, but I would not trust it.
+## What The Prompt Asked For
 
-So I built a scoring system with three goals:
-- compare suppliers against the right peer set
-- shrink thin evidence toward a reasonable baseline
-- separate point performance from confidence
+The assessment asked for:
+- a supplier scoring methodology
+- a Python implementation
+- a ranked supplier output with per-supplier scores and short explanations
+- a brief methodology document
 
-I also packaged the solution as a small Python project instead of a notebook so it is easy to run, inspect, and extend.
+This submission includes all four.
 
-## Primary Deliverables
+## Start Here
 
-If I were reviewing this submission quickly, I would open these files first:
-- `README.md` for the project overview and how to run it
-- `METHODOLOGY.md` for the scoring logic and tradeoffs
-- `outputs/supplier_rankings.csv` for the main ranked output
-- `outputs/market_recommendations.csv` for the market-level recommendation view
-- `outputs/validation_report.md` and `outputs/sensitivity_report.md` for supporting checks
+If I were reviewing this quickly, I would open these files first:
+- `METHODOLOGY.md`
+- `outputs/supplier_rankings.csv`
+- `outputs/market_recommendations.csv`
+- `outputs/validation_report.md`
 
-## What I Built
+## Approach In Brief
 
-The scoring pipeline evaluates each supplier on six components:
+I built the score around three ideas:
+- compare suppliers against the right peers
+- shrink sparse samples toward a defensible baseline
+- separate performance from confidence
+
+The score uses six components:
 - response time
 - completion time
 - cost efficiency
@@ -30,42 +35,9 @@ The scoring pipeline evaluates each supplier on six components:
 - customer rating
 - reopen rate
 
-The implementation prefers `category + region` comparisons when the local market has enough support. When a market is too thin, it falls back to `category`-level comparisons. Each metric is shrunk toward a blended baseline before scoring, and the final composite score is pulled back toward a neutral midpoint when observed history is limited.
+I prefer `category + region` comparisons when the market has enough support and fall back to `category` when it does not. I also add bootstrap-based uncertainty, confidence labels, and a conservative score for more cautious routing decisions.
 
-I also added:
-- bootstrap-based score and rank intervals
-- confidence labels
-- a conservative score for more cautious routing decisions
-- market-level recommendations with a routing posture (`Preferred`, `Consider`, `Review`, `Fallback`)
-- sensitivity analysis so the ranking can be checked against reasonable parameter changes
-
-The full methodology is in [METHODOLOGY.md](./METHODOLOGY.md).
-
-## Repository Layout
-
-```text
-problem2_supplier_scoring_submission/
-├── README.md
-├── METHODOLOGY.md
-├── requirements.txt
-├── run_submission.py
-├── outputs/
-│   ├── supplier_rankings.csv
-│   ├── market_recommendations.csv
-│   ├── validation_report.md
-│   └── sensitivity_report.md
-├── src/openwrench_supplier_scoring/
-│   ├── __init__.py
-│   ├── config.py
-│   ├── data.py
-│   ├── scoring.py
-│   ├── sensitivity.py
-│   └── validation.py
-└── tests/
-    └── test_scoring.py
-```
-
-## How To Run It
+## How To Run
 
 Use Python 3.10+.
 
@@ -76,9 +48,7 @@ pip install -r requirements.txt
 python run_submission.py
 ```
 
-By default, the script reads the sample CSV from the sibling dataset folder in this workspace.
-
-Optional flags:
+Optional:
 
 ```bash
 python run_submission.py \
@@ -94,34 +64,23 @@ python run_submission.py \
 python -m unittest discover -s tests -v
 ```
 
-The tests cover:
-- expected output columns
-- shrinkage of low-volume suppliers
-- handling of missing customer ratings
-- fallback from tiny local markets to category-level comparisons
-- uncertainty attachment
-- the rule that historical supplier volume should not override weak observed support
-
-## Output Files
+## Main Output Files
 
 `outputs/supplier_rankings.csv`
-- full supplier leaderboard
-- point score, conservative score, confidence label, rank range, component scores, and short explanation
+- full supplier leaderboard with scores, confidence, and explanations
 
 `outputs/market_recommendations.csv`
-- top market-level recommendations by `category` and `region`
-- uses conservative score plus confidence-aware routing posture
+- market-level recommendation view with routing posture
 
 `outputs/validation_report.md`
-- human-readable validation summary
+- short summary of validation checks and uncertainty behavior
 
 `outputs/sensitivity_report.md`
-- readable summary of the sensitivity analysis
+- short summary of ranking robustness under reasonable parameter changes
 
-## Notes On Design Choices
+## Notes
 
 - `score_overall` is the main ranking score.
-- `score_conservative` is the bootstrap lower-bound score that I would use when routing decisions should be cautious.
-- `confidence_label` is intentionally separate from performance. A supplier can look good on the point estimate and still have weak evidence.
-- I used `job_count_for_supplier` only as a weak experience signal in confidence. I did not treat it as extra pseudo-observations in the score because the unseen historical jobs do not come with the outcome fields needed for this ranking task.
-- The short explanation is generated from the strongest positive and negative component contributions so the output is still readable by a non-technical ops user.
+- `score_conservative` is the bootstrap lower-bound score for cautious routing.
+- `confidence_label` is separate from performance.
+- `job_count_for_supplier` is used only as a weak confidence signal, not as pseudo-observations in the score.
